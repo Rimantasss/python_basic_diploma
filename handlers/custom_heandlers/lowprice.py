@@ -77,14 +77,14 @@ def get_amount_photo(message: Message) -> None:
             data['amount_photo'] = int(message.text)
 
         id_hostels_list = founding_hostels(data['dest_id'], data['amount_hostels'])
-        for i_id_hostel in id_hostels_list:
-            pics = founding_photo(i_id_hostel, data['amount_photo'])
 
+        for i_id_hostel in id_hostels_list[0]:
+            pics = founding_photo(i_id_hostel, data['amount_photo'])
+            print(pics)
             bot.send_media_group(
                 chat_id=message.chat.id,
                 media=[types.InputMediaPhoto(i_pic) for i_pic in pics]
             )
-
 
     else:
         bot.send_message(message.chat.id, 'Введите цифрами!')
