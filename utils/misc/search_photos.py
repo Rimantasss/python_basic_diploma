@@ -14,9 +14,9 @@ def founding_photo(i_hostel: str, amount_photo: int):
         }
     )
 
+    list_pics = list()
     data_hostel = json.loads(photo_hostel_req.text)
-    patern = r'https://exp.cdn-hotels.com/hotels/\d+.\d+.\d+.\d+.\w+.size..{3}\w'
-    finded = re.findall(patern, str(data_hostel['hotelImages'][:amount_photo]))
-    pics = re.sub(r'{size}', 'l', str(finded))
-    return pics
+    for i_image in data_hostel['hotelImages'][:amount_photo]:
+        list_pics.append(i_image['baseUrl'].format(size='w'))
+    return list_pics
 

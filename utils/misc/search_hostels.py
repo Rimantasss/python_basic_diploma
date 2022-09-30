@@ -36,15 +36,10 @@ def founding_hostels(id_location: str, amount_hostels: int):
             if not 'streetAddress' in i_hostel['address']:
                 i_hostel['address']['streetAddress'] = 'в названии отеля'
 
-            info_hostel = (
-                {
-                    'Отель': i_hostel['name'],
-                    'Адрес': i_hostel['address']['streetAddress'],
-                    'Удаленность от центра': i_hostel['landmarks'][0]['distance'],
-                    'Цена за сутки': i_hostel['ratePlan']['price']['current']
-
-                }
+            info_hostel = '🏨Отель: {}\n🔑Адрес: {}\n🔍Удаленность от центра: {}\n💰Цена за сутки: {}'.format(
+                i_hostel['name'], i_hostel['address']['streetAddress'], i_hostel['landmarks'][0]['distance'], i_hostel['ratePlan']['price']['current']
             )
+
             info_hostel_list.append(info_hostel)
 
         except:

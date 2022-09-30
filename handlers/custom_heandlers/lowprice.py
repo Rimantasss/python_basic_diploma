@@ -78,13 +78,24 @@ def get_amount_photo(message: Message) -> None:
 
         id_hostels_list = founding_hostels(data['dest_id'], data['amount_hostels'])
 
-        for i_id_hostel in id_hostels_list[0]:
-            pics = founding_photo(i_id_hostel, data['amount_photo'])
-            print(pics)
+        for i_id_hostel in enumerate(id_hostels_list[0]):
+            pics = founding_photo(i_id_hostel[1], data['amount_photo'])
+            media_list = list()
+            for i_pic in pics:
+                media_list.append(types.InputMediaPhoto(i_pic))
             bot.send_media_group(
                 chat_id=message.chat.id,
-                media=[types.InputMediaPhoto(i_pic) for i_pic in pics]
+                media=media_list
             )
+            bot.send_message(message.chat.id, id_hostels_list[1][i_id_hostel[0]])
 
     else:
         bot.send_message(message.chat.id, 'Введите цифрами!')
+
+
+# print(pics)
+# print(type(pics))
+# bot.send_media_group(
+#     chat_id=message.chat.id,
+#     media=[types.InputMediaPhoto(pic) for pic in pics]
+
