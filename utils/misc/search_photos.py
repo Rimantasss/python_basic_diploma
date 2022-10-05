@@ -1,4 +1,3 @@
-import re
 import requests
 from config_data.config import RAPID_API_KEY
 import json
