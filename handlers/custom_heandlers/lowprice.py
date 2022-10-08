@@ -6,6 +6,7 @@ from utils.misc.search_photos import founding_photo
 from states.user_states import MyStates
 from keyboards.inline.yes_or_no_buttons import yes_or_no
 from keyboards.inline.confirm_buttons import confirm
+from keyboards.inline.enter_date import enter_date
 from telegram_bot_calendar import DetailedTelegramCalendar
 
 
@@ -51,24 +52,22 @@ def worker_callback_2(callback):
 def worker_callback_3(callback):
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_begin, callback.message.chat.id)
-        bot.send_message(callback.message.chat.id, 'На сколько дней хотите забронировать отель?')
+        bot.send_message(callback.message.chat.id, text='Переходим к дате', reply_markup=enter_date())
     else:
         bot.set_state(callback.from_user.id, MyStates.city, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, 'Выберем заново...В каком городе ищем?')
 
 
-@bot.message_handler(state=MyStates.date_begin)
-def date(message: Message) -> None:
-    bot.set_state(message.from_user.id, MyStates.date_begin_callback, message.chat.id)
-    calendar, step = DetailedTelegramCalendar(locale='ru').build()
-    bot.send_message(message.chat.id, 'Введите дату заселения', reply_markup=calendar)
-
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['amount_days'] = int(message.text)
+@bot.callback_query_handler(state=MyStates.date_begin, func=lambda callback: callback.data)
+def worker_callback_4(callback) -> None:
+    if callback.data == 'Да':
+        bot.set_state(callback.from_user.id, MyStates.date_begin_callback, callback.message.chat.id)
+        calendar, step = DetailedTelegramCalendar(locale='ru').build()
+        bot.send_message(callback.message.chat.id, 'Введите дату заезда', reply_markup=calendar)
 
 
 @bot.callback_query_handler(state=MyStates.date_begin_callback, func=DetailedTelegramCalendar.func())
-def worker_callback_4(callback):
+def worker_callback_5(callback):
     result, key, step = DetailedTelegramCalendar(locale='ru').process(callback.data)
     if not result and key:
         bot.edit_message_text(
@@ -84,11 +83,13 @@ def worker_callback_4(callback):
             callback.message.message_id,
             reply_markup=confirm()
         )
+        with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
+            data['date_begin'] = result
         bot.set_state(callback.from_user.id, MyStates.confirm_or_fix, callback.message.chat.id)
 
 
 @bot.callback_query_handler(state=MyStates.confirm_or_fix, func=lambda callback: callback.data)
-def worker_callback_5(callback):
+def worker_callback_6(callback):
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_finish_callback, callback.message.chat.id)
         calendar, step = DetailedTelegramCalendar(locale='ru').build()
@@ -103,7 +104,7 @@ def date(message: Message) -> None:
 
 
 @bot.callback_query_handler(state=MyStates.date_finish_callback, func=DetailedTelegramCalendar.func())
-def worker_callback_6(callback):
+def worker_callback_7(callback):
     result, key, step = DetailedTelegramCalendar(locale='ru').process(callback.data)
     if not result and key:
         bot.edit_message_text(
@@ -119,11 +120,15 @@ def worker_callback_6(callback):
             callback.message.message_id,
             reply_markup=confirm()
         )
+        with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
+            amt_days = str(result - data['date_begin'])
+            only_days = amt_days.split()[0]
+            data['amount_days'] = int(only_days)
         bot.set_state(callback.from_user.id, MyStates.confirm_or_fix_2, callback.message.chat.id)
 
 
 @bot.callback_query_handler(state=MyStates.confirm_or_fix_2, func=lambda callback: callback.data)
-def worker_callback_7(callback):
+def worker_callback_8(callback):
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.amount_hostels, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, 'Сколько отелей показать?')
@@ -146,13 +151,13 @@ def get_amount_hostels(message: Message) -> None:
 
 
 @bot.callback_query_handler(state=MyStates.is_photo, func=lambda callback: callback.data)
-def worker_callback_8(callback):
+def worker_callback_9(callback):
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.amount_photo, callback.message.chat.id)
-        bot.send_message(callback.from_user.id, 'Сколько фото загрузить?')
+        bot.send_message(callback.from_user.id, 'Сколько фото загрузить?(не более 10)')
     else:
         with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
-            id_hostels = founding_hostels(data['dest_id'], data['amount_hostels'], data['amount_days'])
+            id_hostels = founding_hostels(data['location_id'], data['amount_hostels'], data['amount_days'])
 
         for i_id in id_hostels[1]:
             bot.send_message(callback.from_user.id, i_id)
@@ -161,21 +166,22 @@ def worker_callback_8(callback):
 @bot.message_handler(state=MyStates.amount_photo)
 def get_amount_photo(message: Message) -> None:
     if message.text.isdecimal():
+        if int(message.text) < 10:
+            with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+                data['amount_photo'] = int(message.text)
 
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['amount_photo'] = int(message.text)
+            id_hostels_list = founding_hostels(data['location_id'], data['amount_hostels'], data['amount_days'])
 
-        id_hostels_list = founding_hostels(data['location_id'], data['amount_hostels'], data['amount_days'])
-
-        for i_id_hostel in enumerate(id_hostels_list[0]):
-            pics = founding_photo(i_id_hostel[1], data['amount_photo'])
-            bot.send_media_group(
-                chat_id=message.chat.id,
-                media=[InputMediaPhoto(i_pic) for i_pic in pics]
-            )
-            bot.send_message(message.chat.id, id_hostels_list[1][i_id_hostel[0]])
-            bot.set_state(message.from_user.id, None, message.chat.id)
-
+            for i_id_hostel in enumerate(id_hostels_list[0]):
+                pics = founding_photo(i_id_hostel[1], data['amount_photo'])
+                bot.send_media_group(
+                    chat_id=message.chat.id,
+                    media=[InputMediaPhoto(i_pic) for i_pic in pics]
+                )
+                bot.send_message(message.chat.id, id_hostels_list[1][i_id_hostel[0]])
+                bot.set_state(message.from_user.id, None, message.chat.id)
+        else:
+            bot.send_message(message.chat.id, 'Слишком много фото. Допустимо не более 10. Ведите количество фото:')
     else:
         bot.send_message(message.chat.id, 'Введите цифрами!')
 

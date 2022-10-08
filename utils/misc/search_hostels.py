@@ -30,23 +30,47 @@ def founding_hostels(id_location: str, amount_hostels: int, amount_days: int):
     id_hostels_list = list()
     info_hostel_list = list()
     for i_hostel in suggestions['results'][:amount_hostels]:
+        name = i_hostel.get('name', '-')
+        if 'guestReviews' in i_hostel:
+            rating = i_hostel['guestReviews'].get('rating', '-')
+        else:
+            rating= '-'
+
+        if 'address' in i_hostel:
+            adress = i_hostel['address'].get('streetAddress', '-')
+        else:
+            adress = '-'
+
+        if 'landmarks' in i_hostel:
+            distance = i_hostel['landmarks'][0].get('distance', '-')
+        else:
+            distance = '-'
+
+        if 'ratePlan' in i_hostel:
+            if 'price' in i_hostel['ratePlan']:
+                price = i_hostel['ratePlan']['price'].get('current', '-')
+            else:
+                price = '-'
+        else:
+            price = '-'
+
+        if price != '-':
+            total_price = '${}'.format(int(i_hostel['ratePlan']['price']['current'][1:]) * amount_days)
+        else:
+            total_price = '-'
+
         try:
-            print(i_hostel)
             id_hostels_list.append(i_hostel['id'])
 
-            if not 'streetAddress' in i_hostel['address']:
-                i_hostel['address']['streetAddress'] = 'в названии отеля'
-
             info_hostel = '\n🏨Отель: {}\n⭐️Рейтинг: {}\n🔑Адрес: {}\n🔍Удаленность от центра: {}\n💰Цена за сутки: {}\n💰Общая стоимость: {}'.format(
-                i_hostel['name'],
-                i_hostel['guestReviews']['rating'],
-                i_hostel['address']['streetAddress'],
-                i_hostel['landmarks'][0]['distance'],
-                i_hostel['ratePlan']['price']['current'],
-                '${}'.format(int(i_hostel['ratePlan']['price']['current'][1:]) * amount_days)
+                name,
+                rating,
+                adress,
+                distance,
+                price,
+                total_price
             )
             info_hostel_list.append(info_hostel)
-
         except:
             pass
 
