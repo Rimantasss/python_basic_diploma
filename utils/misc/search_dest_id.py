@@ -5,7 +5,7 @@ from telebot import types
 from config_data.config import RAPID_API_KEY
 
 
-def city_founding(city):
+def city_founding(city: str):
     response = requests.get(
         url='https://hotels4.p.rapidapi.com/locations/v2/search',
         params={'query': city, 'locale': 'ru_RU', 'currency': 'USD'},

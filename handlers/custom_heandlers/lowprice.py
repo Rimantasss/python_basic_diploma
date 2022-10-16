@@ -1,19 +1,27 @@
 from loader import bot
-from telebot.types import Message, InputMediaPhoto
+from telebot.types import Message, InputMediaPhoto, CallbackQuery
 from utils.misc.search_dest_id import city_founding
 from utils.misc.search_hostels import founding_hostels
 from utils.misc.search_photos import founding_photo
 from states.user_states import MyStates
 from keyboards.inline.yes_or_no_buttons import yes_or_no
 from keyboards.inline.confirm_buttons import confirm
-from keyboards.inline.enter_date import enter_date
-from telegram_bot_calendar import DetailedTelegramCalendar
+from keyboards.inline.enter_date_start import enter_date_start
+from keyboards.inline.amount_photo import amount_photo
+from keyboards.inline.enter_date_finish import enter_date_finish
+from keyboards.inline.calendar import create_calendar
+from database.write_to_db import write_database
+from datetime import datetime, timedelta
 
 
 @bot.message_handler(commands=['lowprice'])
 def lowprice(message: Message) -> None:
     bot.set_state(message.from_user.id, MyStates.city, message.chat.id)
     bot.send_message(message.from_user.id, 'В каком городе ищем?')
+
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        now_time = datetime.now()
+        data['date_time'] = now_time.strftime('%Y-%m-%d %H:%M:%S')
 
 
 @bot.message_handler(state=MyStates.city)
@@ -25,53 +33,59 @@ def city(message: Message) -> None:
             data['city'] = message.text
 
         bot.send_message(
-            message.from_user.id, 'Уточните, пожалуйста:', reply_markup=city_founding(data['city'])
+            message.from_user.id,
+            'Уточните, пожалуйста:',
+            reply_markup=city_founding(data['city'])
         )
 
     else:
         bot.send_message(message.chat.id, 'Назвние города должно состоять только из букв!')
 
 
-@bot.callback_query_handler(state=MyStates.location_id, func=lambda callback: callback.data)
-def worker_callback_2(callback):
+@bot.callback_query_handler(state=MyStates.location_id, func=None)
+def worker_callback_2(callback: CallbackQuery) -> None:
     bot.set_state(callback.from_user.id, MyStates.reply_city, callback.message.chat.id)
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
 
-    for i in callback.message.reply_markup.keyboard:
-        for keyboard in i:
+    for i_call in callback.message.reply_markup.keyboard:
+        for keyboard in i_call:
             if keyboard.callback_data == callback.data:
                 bot.send_message(
                     chat_id=callback.from_user.id,
                     text='Вы выбрали {}, верно?'.format(keyboard.text),
-                    reply_markup=yes_or_no())
+                    reply_markup=yes_or_no()
+                )
 
     with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
         data['location_id'] = callback.data
 
 
-@bot.callback_query_handler(state=MyStates.reply_city, func=lambda callback: callback.data)
-def worker_callback_3(callback):
+@bot.callback_query_handler(state=MyStates.reply_city, func=None)
+def worker_callback_3(callback: CallbackQuery) -> None:
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_begin, callback.message.chat.id)
-        bot.send_message(callback.message.chat.id, text='Переходим к дате', reply_markup=enter_date())
+        bot.send_message(callback.message.chat.id, text='Переходим к дате', reply_markup=enter_date_start())
     else:
         bot.set_state(callback.from_user.id, MyStates.city, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, 'Выберем заново...В каком городе ищем?')
 
 
-@bot.callback_query_handler(state=MyStates.date_begin, func=lambda callback: callback.data)
-def worker_callback_4(callback) -> None:
+@bot.callback_query_handler(state=MyStates.date_begin, func=None)
+def worker_callback_4(callback: CallbackQuery) -> None:
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_begin_callback, callback.message.chat.id)
-        calendar, step = DetailedTelegramCalendar(locale='ru').build()
-        bot.send_message(callback.message.chat.id, 'Введите дату заезда', reply_markup=calendar)
+        calendar, step = create_calendar(callback_data=callback.data)
+        bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
-@bot.callback_query_handler(state=MyStates.date_begin_callback, func=DetailedTelegramCalendar.func())
-def worker_callback_5(callback):
-    result, key, step = DetailedTelegramCalendar(locale='ru').process(callback.data)
+@bot.callback_query_handler(state=MyStates.date_begin_callback, func=None)
+def worker_callback_5(callback: CallbackQuery) -> None:
+    result, key, step = create_calendar(callback_data=callback.data, is_process=True)
     if not result and key:
         bot.edit_message_text(
-            'Введите дату',
+            'Введите {}'.format(step),
             callback.message.chat.id,
             callback.message.message_id,
             reply_markup=key
@@ -81,34 +95,38 @@ def worker_callback_5(callback):
             'Ваша дата заезда: {}'.format(result),
             callback.message.chat.id,
             callback.message.message_id,
-            reply_markup=confirm()
+            reply_markup=enter_date_finish()
         )
+
         with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
             data['date_begin'] = result
-        bot.set_state(callback.from_user.id, MyStates.confirm_or_fix, callback.message.chat.id)
+
+        bot.set_state(callback.from_user.id, MyStates.confirm, callback.message.chat.id)
 
 
-@bot.callback_query_handler(state=MyStates.confirm_or_fix, func=lambda callback: callback.data)
-def worker_callback_6(callback):
+@bot.callback_query_handler(state=MyStates.confirm, func=None)
+def worker_callback_6(callback: CallbackQuery) -> None:
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
+
+    with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
+        min_date = data['date_begin']
+
     if callback.data == 'Да':
-        bot.set_state(callback.from_user.id, MyStates.date_finish_callback, callback.message.chat.id)
-        calendar, step = DetailedTelegramCalendar(locale='ru').build()
-        bot.send_message(callback.message.chat.id, 'Введите дату отъезда', reply_markup=calendar)
+        bot.set_state(callback.from_user.id, MyStates.date_finish, callback.message.chat.id)
+        calendar, step = create_calendar(callback_data=callback.data, min_date=min_date)
+        bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
-@bot.message_handler(state=MyStates.date_finish)
-def date(message: Message) -> None:
-    bot.set_state(message.from_user.id, MyStates.date_finish_callback, message.chat.id)
-    calendar, step = DetailedTelegramCalendar(locale='ru').build()
-    bot.send_message(message.chat.id, 'Введите дату отъезда', reply_markup=calendar)
+@bot.callback_query_handler(state=MyStates.date_finish, func=None)
+def worker_callback_7(callback: CallbackQuery) -> None:
 
+    with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
+        min_date = data['date_begin'] + timedelta(days=1)
 
-@bot.callback_query_handler(state=MyStates.date_finish_callback, func=DetailedTelegramCalendar.func())
-def worker_callback_7(callback):
-    result, key, step = DetailedTelegramCalendar(locale='ru').process(callback.data)
+    result, key, step = create_calendar(callback_data=callback.data, min_date=min_date, is_process=True)
     if not result and key:
         bot.edit_message_text(
-            'Введите дату',
+            'Введите {}'.format(step),
             callback.message.chat.id,
             callback.message.message_id,
             reply_markup=key
@@ -124,11 +142,12 @@ def worker_callback_7(callback):
             amt_days = str(result - data['date_begin'])
             only_days = amt_days.split()[0]
             data['amount_days'] = int(only_days)
-        bot.set_state(callback.from_user.id, MyStates.confirm_or_fix_2, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.confirm_2, callback.message.chat.id)
 
 
-@bot.callback_query_handler(state=MyStates.confirm_or_fix_2, func=lambda callback: callback.data)
-def worker_callback_8(callback):
+@bot.callback_query_handler(state=MyStates.confirm_2, func=None)
+def worker_callback_8(callback: CallbackQuery) -> None:
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.amount_hostels, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, 'Сколько отелей показать?')
@@ -150,38 +169,39 @@ def get_amount_hostels(message: Message) -> None:
         bot.send_message(message.chat.id, 'Введите цифрами!')
 
 
-@bot.callback_query_handler(state=MyStates.is_photo, func=lambda callback: callback.data)
-def worker_callback_9(callback):
+@bot.callback_query_handler(state=MyStates.is_photo, func=None)
+def worker_callback_9(callback: CallbackQuery) -> None:
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.amount_photo, callback.message.chat.id)
-        bot.send_message(callback.from_user.id, 'Сколько фото загрузить?(не более 10)')
+        bot.send_message(callback.from_user.id, 'Сколько фото загрузить?', reply_markup=amount_photo())
     else:
         with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
             id_hostels = founding_hostels(data['location_id'], data['amount_hostels'], data['amount_days'])
+            write_database('lowprice', data['date_time'], id_hostels[2])
 
         for i_id in id_hostels[1]:
             bot.send_message(callback.from_user.id, i_id)
 
 
-@bot.message_handler(state=MyStates.amount_photo)
-def get_amount_photo(message: Message) -> None:
-    if message.text.isdecimal():
-        if int(message.text) < 10:
-            with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-                data['amount_photo'] = int(message.text)
+@bot.callback_query_handler(state=MyStates.amount_photo, func=None)
+def get_amount_photo(callback: CallbackQuery) -> None:
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
+    with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
+        data['amount_photo'] = int(callback.data)
 
-            id_hostels_list = founding_hostels(data['location_id'], data['amount_hostels'], data['amount_days'])
+    id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
+        data['location_id'], data['amount_hostels'], data['amount_days']
+    )
 
-            for i_id_hostel in enumerate(id_hostels_list[0]):
-                pics = founding_photo(i_id_hostel[1], data['amount_photo'])
-                bot.send_media_group(
-                    chat_id=message.chat.id,
-                    media=[InputMediaPhoto(i_pic) for i_pic in pics]
-                )
-                bot.send_message(message.chat.id, id_hostels_list[1][i_id_hostel[0]])
-                bot.set_state(message.from_user.id, None, message.chat.id)
-        else:
-            bot.send_message(message.chat.id, 'Слишком много фото. Допустимо не более 10. Ведите количество фото:')
-    else:
-        bot.send_message(message.chat.id, 'Введите цифрами!')
+    for i_id_hostel in enumerate(id_hostels_list):
+        num, i_id = i_id_hostel
+        pics = founding_photo(i_id, data['amount_photo'])
+        bot.send_media_group(
+            chat_id=callback.message.chat.id,
+            media=[InputMediaPhoto(i_pic) for i_pic in pics]
+        )
+        bot.send_message(callback.message.chat.id, info_hostel_list[num])
+        bot.set_state(callback.from_user.id, None, callback.message.chat.id)
 
+    write_database('lowprice', data['date_time'], all_hostels_name)

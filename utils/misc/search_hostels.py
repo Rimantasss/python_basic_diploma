@@ -4,7 +4,7 @@ from config_data.config import RAPID_API_KEY
 import json
 
 
-def founding_hostels(id_location: str, amount_hostels: int, amount_days: int):
+def founding_hostels(id_location: str, amount_hostels: int, amount_days: int) -> tuple:
     hostels_req = requests.get(
         url='https://hotels4.p.rapidapi.com/properties/list',
         params={
@@ -29,12 +29,15 @@ def founding_hostels(id_location: str, amount_hostels: int, amount_days: int):
 
     id_hostels_list = list()
     info_hostel_list = list()
+    all_hostels_name = str()
     for i_hostel in suggestions['results'][:amount_hostels]:
         name = i_hostel.get('name', '-')
+        all_hostels_name += ''.join('{}\n'.format(name))
+
         if 'guestReviews' in i_hostel:
             rating = i_hostel['guestReviews'].get('rating', '-')
         else:
-            rating= '-'
+            rating = '-'
 
         if 'address' in i_hostel:
             adress = i_hostel['address'].get('streetAddress', '-')
@@ -61,18 +64,16 @@ def founding_hostels(id_location: str, amount_hostels: int, amount_days: int):
 
         try:
             id_hostels_list.append(i_hostel['id'])
-
-            info_hostel = '\n🏨Отель: {}\n⭐️Рейтинг: {}\n🔑Адрес: {}\n🔍Удаленность от центра: {}\n💰Цена за сутки: {}\n💰Общая стоимость: {}'.format(
-                name,
-                rating,
-                adress,
-                distance,
-                price,
-                total_price
-            )
+            link = 'https://hotels.com/ho{}'.format(i_hostel['id'])
+            info_hostel = '\n🏨Отель: {}' \
+                          '\n⭐️Рейтинг: {}' \
+                          '\n🔑Адрес: {}' \
+                          '\n🔍Удаленность от центра: {}' \
+                          '\n💵Цена за сутки: {}' \
+                          '\n💰Общая стоимость: {}' \
+                          '\n💾Ссылка на отель: {}'.format(name, rating, adress, distance, price, total_price, link)
             info_hostel_list.append(info_hostel)
         except:
             pass
 
-    return id_hostels_list, info_hostel_list
-
+    return id_hostels_list, info_hostel_list, all_hostels_name

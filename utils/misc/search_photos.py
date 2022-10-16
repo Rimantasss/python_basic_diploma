@@ -3,7 +3,7 @@ from config_data.config import RAPID_API_KEY
 import json
 
 
-def founding_photo(i_hostel: str, amount_photo: int):
+def founding_photo(i_hostel: str, amount_photo: int) -> list:
     photo_hostel_req = requests.get(
         url='https://hotels4.p.rapidapi.com/properties/get-hotel-photos',
         params={'id': i_hostel},
