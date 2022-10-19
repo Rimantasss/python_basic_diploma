@@ -11,7 +11,8 @@ from keyboards.inline.amount_photo import amount_photo
 from keyboards.inline.enter_date_finish import enter_date_finish
 from keyboards.inline.calendar import create_calendar
 from database.write_to_db import write_database
-from datetime import datetime, timedelta
+from datetime import date, timedelta
+import time
 
 
 @bot.message_handler(commands=['lowprice'])
@@ -20,8 +21,8 @@ def lowprice(message: Message) -> None:
     bot.send_message(message.from_user.id, 'В каком городе ищем?')
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        now_time = datetime.now()
-        data['date_time'] = now_time.strftime('%Y-%m-%d %H:%M:%S')
+        data['date'] = date.today()
+        data['time'] = time.strftime('%H:%M:%S')
 
 
 @bot.message_handler(state=MyStates.city)
@@ -204,4 +205,5 @@ def get_amount_photo(callback: CallbackQuery) -> None:
         bot.send_message(callback.message.chat.id, info_hostel_list[num])
         bot.set_state(callback.from_user.id, None, callback.message.chat.id)
 
-    write_database('lowprice', data['date_time'], all_hostels_name)
+    write_database('lowprice', data['date'], data['time'], all_hostels_name)
+
