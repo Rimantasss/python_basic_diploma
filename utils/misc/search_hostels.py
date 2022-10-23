@@ -4,17 +4,28 @@ from config_data.config import RAPID_API_KEY
 import json
 
 
-def founding_hostels(id_location: str, amount_hostels: int, amount_days: int) -> tuple:
+def founding_hostels(id_location: str, amount_hostels: int, amount_days: int, command: str, price_min: str = None,
+                     price_max: str = None) -> tuple:
+
+    if command == 'lowprice':
+        param_sort = 'PRICE'
+    elif command == 'highprice':
+        param_sort = 'PRICE_HIGHEST_FIRST'
+    elif command == 'bestdeal':
+        param_sort = 'DISTANCE_FROM_LANDMARK'
+
     hostels_req = requests.get(
         url='https://hotels4.p.rapidapi.com/properties/list',
         params={
             'destinationId': id_location,
             'pageNumber': '1',
-            'pageSize': '25',
+            'pageSize': str(amount_hostels),
             'adults1': '1',
-            'sortOrder': 'PRICE',
+            'priceMin': price_min,
+            'priceMax': price_max,
+            'sortOrder': param_sort,
             'locale': 'ru_RU',
-            'currency': 'USD'
+            'currency': 'USD',
         },
         headers={
             'X-RapidAPI-Key': RAPID_API_KEY,
@@ -30,7 +41,9 @@ def founding_hostels(id_location: str, amount_hostels: int, amount_days: int) ->
     id_hostels_list = list()
     info_hostel_list = list()
     all_hostels_name = str()
-    for i_hostel in suggestions['results'][:amount_hostels]:
+
+    for i_hostel in suggestions['results']:
+        print(i_hostel)
         name = i_hostel.get('name', '-')
         all_hostels_name += ''.join('{}\n'.format(name))
 

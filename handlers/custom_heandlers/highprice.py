@@ -15,9 +15,9 @@ from datetime import date, timedelta
 import time
 
 
-@bot.message_handler(commands=['lowprice'])
-def lowprice(message: Message) -> None:
-    bot.set_state(message.from_user.id, MyStates.city, message.chat.id)
+@bot.message_handler(commands=['highprice'])
+def highprice(message: Message) -> None:
+    bot.set_state(message.from_user.id, MyStates.city_h, message.chat.id)
     bot.send_message(message.from_user.id, 'В каком городе ищем?')
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
@@ -25,10 +25,10 @@ def lowprice(message: Message) -> None:
         data['time'] = time.strftime('%H:%M:%S')
 
 
-@bot.message_handler(state=MyStates.city)
+@bot.message_handler(state=MyStates.city_h)
 def city(message: Message) -> None:
     if message.text.isalpha():
-        bot.set_state(message.from_user.id, MyStates.location_id, message.chat.id)
+        bot.set_state(message.from_user.id, MyStates.location_id_h, message.chat.id)
 
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             data['city'] = message.text
@@ -43,9 +43,9 @@ def city(message: Message) -> None:
         bot.send_message(message.chat.id, 'Назвние города должно состоять только из букв!')
 
 
-@bot.callback_query_handler(state=MyStates.location_id, func=None)
+@bot.callback_query_handler(state=MyStates.location_id_h, func=None)
 def worker_callback_2(callback: CallbackQuery) -> None:
-    bot.set_state(callback.from_user.id, MyStates.reply_city, callback.message.chat.id)
+    bot.set_state(callback.from_user.id, MyStates.reply_city_h, callback.message.chat.id)
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
 
     for i_call in callback.message.reply_markup.keyboard:
@@ -61,27 +61,27 @@ def worker_callback_2(callback: CallbackQuery) -> None:
         data['location_id'] = callback.data
 
 
-@bot.callback_query_handler(state=MyStates.reply_city, func=None)
+@bot.callback_query_handler(state=MyStates.reply_city_h, func=None)
 def worker_callback_3(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
-        bot.set_state(callback.from_user.id, MyStates.date_begin, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.date_begin_h, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, text='Переходим к дате', reply_markup=enter_date_start())
     else:
-        bot.set_state(callback.from_user.id, MyStates.city, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.city_h, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, 'Выберем заново...В каком городе ищем?')
 
 
-@bot.callback_query_handler(state=MyStates.date_begin, func=None)
+@bot.callback_query_handler(state=MyStates.date_begin_h, func=None)
 def worker_callback_4(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
-        bot.set_state(callback.from_user.id, MyStates.date_begin_callback, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.date_begin_callback_h, callback.message.chat.id)
         calendar, step = create_calendar(callback_data=callback.data)
         bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
-@bot.callback_query_handler(state=MyStates.date_begin_callback, func=None)
+@bot.callback_query_handler(state=MyStates.date_begin_callback_h, func=None)
 def worker_callback_5(callback: CallbackQuery) -> None:
     result, key, step = create_calendar(callback_data=callback.data, is_process=True)
     if not result and key:
@@ -102,10 +102,10 @@ def worker_callback_5(callback: CallbackQuery) -> None:
         with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
             data['date_begin'] = result
 
-        bot.set_state(callback.from_user.id, MyStates.confirm, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.confirm_h, callback.message.chat.id)
 
 
-@bot.callback_query_handler(state=MyStates.confirm, func=None)
+@bot.callback_query_handler(state=MyStates.confirm_h, func=None)
 def worker_callback_6(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
 
@@ -113,12 +113,12 @@ def worker_callback_6(callback: CallbackQuery) -> None:
         min_date = data['date_begin']
 
     if callback.data == 'Да':
-        bot.set_state(callback.from_user.id, MyStates.date_finish, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.date_finish_h, callback.message.chat.id)
         calendar, step = create_calendar(callback_data=callback.data, min_date=min_date)
         bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
-@bot.callback_query_handler(state=MyStates.date_finish, func=None)
+@bot.callback_query_handler(state=MyStates.date_finish_h, func=None)
 def worker_callback_7(callback: CallbackQuery) -> None:
 
     with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
@@ -143,21 +143,21 @@ def worker_callback_7(callback: CallbackQuery) -> None:
             amt_days = str(result - data['date_begin'])
             only_days = amt_days.split()[0]
             data['amount_days'] = int(only_days)
-        bot.set_state(callback.from_user.id, MyStates.confirm_2, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.confirm_2_h, callback.message.chat.id)
 
 
-@bot.callback_query_handler(state=MyStates.confirm_2, func=None)
+@bot.callback_query_handler(state=MyStates.confirm_2_h, func=None)
 def worker_callback_8(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
-        bot.set_state(callback.from_user.id, MyStates.amount_hostels, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.amount_hostels_h, callback.message.chat.id)
         bot.send_message(callback.message.chat.id, 'Сколько отелей показать?')
 
 
-@bot.message_handler(state=MyStates.amount_hostels)
+@bot.message_handler(state=MyStates.amount_hostels_h)
 def get_amount_hostels(message: Message) -> None:
     if message.text.isdecimal():
-        bot.set_state(message.from_user.id, MyStates.is_photo, message.chat.id)
+        bot.set_state(message.from_user.id, MyStates.is_photo_h, message.chat.id)
         bot.send_message(
             chat_id=message.chat.id,
             text='Загрузить фото?',
@@ -170,31 +170,31 @@ def get_amount_hostels(message: Message) -> None:
         bot.send_message(message.chat.id, 'Введите цифрами!')
 
 
-@bot.callback_query_handler(state=MyStates.is_photo, func=None)
+@bot.callback_query_handler(state=MyStates.is_photo_h, func=None)
 def worker_callback_9(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
-        bot.set_state(callback.from_user.id, MyStates.amount_photo, callback.message.chat.id)
+        bot.set_state(callback.from_user.id, MyStates.amount_photo_h, callback.message.chat.id)
         bot.send_message(callback.from_user.id, 'Сколько фото загрузить?', reply_markup=amount_photo())
     else:
         with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
             id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
-                data['location_id'], data['amount_hostels'], data['amount_days'], 'lowprice'
+                data['location_id'], data['amount_hostels'], data['amount_days'], 'highprice'
             )
-            write_database('lowprice', data['date'], data['time'], all_hostels_name)
+            write_database('highprice', data['date'], data['time'], all_hostels_name)
 
         for i_id in info_hostel_list:
             bot.send_message(callback.from_user.id, i_id)
 
 
-@bot.callback_query_handler(state=MyStates.amount_photo, func=None)
+@bot.callback_query_handler(state=MyStates.amount_photo_h, func=None)
 def get_amount_photo(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
         data['amount_photo'] = int(callback.data)
 
     id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
-        data['location_id'], data['amount_hostels'], data['amount_days'], 'lowprice'
+        data['location_id'], data['amount_hostels'], data['amount_days'], 'highprice'
     )
 
     for i_id_hostel in enumerate(id_hostels_list):
@@ -207,5 +207,4 @@ def get_amount_photo(callback: CallbackQuery) -> None:
         bot.send_message(callback.message.chat.id, info_hostel_list[num])
         bot.set_state(callback.from_user.id, None, callback.message.chat.id)
 
-    write_database('lowprice', data['date'], data['time'], all_hostels_name)
-
+    write_database('highprice', data['date'], data['time'], all_hostels_name)
