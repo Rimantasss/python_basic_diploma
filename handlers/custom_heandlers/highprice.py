@@ -77,13 +77,13 @@ def worker_callback_4(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_begin_callback_h, callback.message.chat.id)
-        calendar, step = create_calendar(callback_data=callback.data)
+        calendar, step = create_calendar(callback_data=callback)
         bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
 @bot.callback_query_handler(state=MyStates.date_begin_callback_h, func=None)
 def worker_callback_5(callback: CallbackQuery) -> None:
-    result, key, step = create_calendar(callback_data=callback.data, is_process=True)
+    result, key, step = create_calendar(callback_data=callback, is_process=True)
     if not result and key:
         bot.edit_message_text(
             'Введите {}'.format(step),
@@ -114,7 +114,7 @@ def worker_callback_6(callback: CallbackQuery) -> None:
 
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_finish_h, callback.message.chat.id)
-        calendar, step = create_calendar(callback_data=callback.data, min_date=min_date)
+        calendar, step = create_calendar(callback_data=callback, min_date=min_date)
         bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
@@ -124,7 +124,7 @@ def worker_callback_7(callback: CallbackQuery) -> None:
     with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
         min_date = data['date_begin'] + timedelta(days=1)
 
-    result, key, step = create_calendar(callback_data=callback.data, min_date=min_date, is_process=True)
+    result, key, step = create_calendar(callback_data=callback, min_date=min_date, is_process=True)
     if not result and key:
         bot.edit_message_text(
             'Введите {}'.format(step),

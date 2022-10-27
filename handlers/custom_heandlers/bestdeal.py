@@ -77,13 +77,13 @@ def worker_callback_4(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_begin_callback_b, callback.message.chat.id)
-        calendar, step = create_calendar(callback_data=callback.data)
+        calendar, step = create_calendar(callback_data=callback)
         bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
 @bot.callback_query_handler(state=MyStates.date_begin_callback_b, func=None)
 def worker_callback_5(callback: CallbackQuery) -> None:
-    result, key, step = create_calendar(callback_data=callback.data, is_process=True)
+    result, key, step = create_calendar(callback_data=callback, is_process=True)
     if not result and key:
         bot.edit_message_text(
             'Введите {}'.format(step),
@@ -114,7 +114,7 @@ def worker_callback_6(callback: CallbackQuery) -> None:
 
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.date_finish_b, callback.message.chat.id)
-        calendar, step = create_calendar(callback_data=callback.data, min_date=min_date)
+        calendar, step = create_calendar(callback_data=callback, min_date=min_date)
         bot.send_message(callback.message.chat.id, 'Введите {}'.format(step), reply_markup=calendar)
 
 
@@ -123,7 +123,7 @@ def worker_callback_7(callback: CallbackQuery) -> None:
     with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
         min_date = data['date_begin'] + timedelta(days=1)
 
-    result, key, step = create_calendar(callback_data=callback.data, min_date=min_date, is_process=True)
+    result, key, step = create_calendar(callback_data=callback, min_date=min_date, is_process=True)
     if not result and key:
         bot.edit_message_text(
             'Введите {}'.format(step),
@@ -188,17 +188,17 @@ def worker_callback_8(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(callback.from_user.id, MyStates.distance_min, callback.message.chat.id)
-        bot.send_message(callback.message.chat.id, 'Напишите минимальное расстояние от центра')
+        bot.send_message(callback.message.chat.id, 'Напишите минимальное расстояние (км) от центра')
 
 
 @bot.message_handler(state=MyStates.distance_min)
 def get_amount_hostels(message: Message) -> None:
     if message.text.isdecimal():
         bot.set_state(message.from_user.id, MyStates.distance_max, message.chat.id)
-        bot.send_message(message.chat.id, 'Напишите максимальное расстояние от центра')
+        bot.send_message(message.chat.id, 'Напишите максимальное расстояние (км) от центра')
 
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['distance_min'] = message.text
+            data['distance_min'] = float(message.text)
 
     else:
         bot.send_message(message.chat.id, 'Введите цифрами!')
@@ -211,7 +211,7 @@ def get_amount_hostels(message: Message) -> None:
         bot.send_message(message.chat.id, 'Сколько отелей показать?')
 
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['distance_max'] = message.text
+            data['distance_max'] = float(message.text)
 
     else:
         bot.send_message(message.chat.id, 'Введите цифрами!')
@@ -243,7 +243,7 @@ def worker_callback_9(callback: CallbackQuery) -> None:
         with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
             id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
                 data['location_id'], data['amount_hostels'], data['amount_days'], 'bestdeal',
-                data['price_min'], data['price_max']
+                data['price_min'], data['price_max'], data['distance_min'], data['distance_max']
             )
             write_database('bestdeal', data['date'], data['time'], all_hostels_name)
 
@@ -259,7 +259,7 @@ def get_amount_photo(callback: CallbackQuery) -> None:
 
     id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
         data['location_id'], data['amount_hostels'], data['amount_days'], 'bestdeal',
-        data['price_min'], data['price_max']
+        data['price_min'], data['price_max'], data['distance_min'], data['distance_max']
     )
 
     for i_id_hostel in enumerate(id_hostels_list):
