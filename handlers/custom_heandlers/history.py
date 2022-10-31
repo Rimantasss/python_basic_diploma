@@ -14,7 +14,7 @@ def history(message: Message) -> None:
 
 
 @bot.callback_query_handler(state=MyStates.date_start_1, func=None)
-def enter_date(callback: CallbackQuery) -> None:
+def enter_date_start(callback: CallbackQuery) -> None:
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.date_start_2, user_id=callback.message.chat.id)
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     calendar, step = DetailedTelegramCalendar(locale='ru').build()
@@ -45,7 +45,7 @@ def enter_date_next(callback: CallbackQuery) -> None:
 
 
 @bot.callback_query_handler(state=MyStates.date_end_1, func=None)
-def enter_date(callback: CallbackQuery) -> None:
+def enter_date_finish(callback: CallbackQuery) -> None:
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.date_end_2, user_id=callback.message.chat.id)
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     calendar, step = DetailedTelegramCalendar(locale='ru').build()
