@@ -3,7 +3,7 @@ from telebot.types import Message, CallbackQuery
 from keyboards.inline.confirm_buttons import confirm
 from states.user_states import MyStates
 from telegram_bot_calendar import DetailedTelegramCalendar
-from database.get_from_db import get_from_db
+from database.data_base import get_from_db
 
 
 @bot.message_handler(commands=['history'])
@@ -18,12 +18,11 @@ def history(message: Message) -> None:
 
 @bot.callback_query_handler(state=MyStates.date_start_1, func=None)
 def enter_date(callback: CallbackQuery) -> None:
-    if callback.data == 'Да':
-        ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
-        bot.set_state(callback.from_user.id, MyStates.date_start_2, callback.message.chat.id)
-        bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
-        calendar, step = DetailedTelegramCalendar(locale='ru').build()
-        bot.send_message(callback.message.chat.id, 'Введите {}'.format(ALL_STEPS[step]), reply_markup=calendar)
+    ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
+    bot.set_state(callback.from_user.id, MyStates.date_start_2, callback.message.chat.id)
+    bot.edit_message_reply_markup(callback.message.chat.id, callback.message.message_id)
+    calendar, step = DetailedTelegramCalendar(locale='ru').build()
+    bot.send_message(callback.message.chat.id, 'Введите {}'.format(ALL_STEPS[step]), reply_markup=calendar)
 
 
 @bot.callback_query_handler(state=MyStates.date_start_2, func=None)
