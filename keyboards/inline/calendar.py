@@ -6,6 +6,7 @@ from loguru import logger
 
 @logger.catch
 def create_calendar(callback_data: CallbackQuery, min_date=None, is_process=None):
+    """Функция создает календарь"""
     ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
     if min_date is None:
@@ -27,6 +28,10 @@ def create_calendar(callback_data: CallbackQuery, min_date=None, is_process=None
             current_date=min_date,
             min_date=min_date).build()
         return calendar, ALL_STEPS[step]
+
+
+def all_steps() -> dict:
+    return {'y': 'год', 'm': 'месяц', 'd': 'день'}
 
 
 

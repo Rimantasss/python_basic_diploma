@@ -4,10 +4,12 @@ import json
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config_data.config import RAPID_API_KEY
 from loguru import logger
+from typing import Any
 
 
 @logger.catch
-def city_founding(city: str):
+def city_founding(city: str) -> Any:
+    """Функция делает запрос к API"""
     response = requests.get(
         url='https://hotels4.p.rapidapi.com/locations/v2/search',
         params={'query': city, 'locale': 'ru_RU', 'currency': 'USD'},
@@ -30,6 +32,7 @@ def city_founding(city: str):
 
 @logger.catch
 def all_cities(suggestions: dict) -> InlineKeyboardMarkup:
+    """Функция обрабатывает словарь и возвращает клавиатуру с геолокациями"""
     cities = list()
     for dest_id in suggestions['entities']:
         clear_destination = re.sub(

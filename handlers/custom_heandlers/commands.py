@@ -4,11 +4,7 @@ from utils.misc.search_dest_id import city_founding
 from utils.misc.search_hostels import founding_hostels
 from utils.misc.search_photos import founding_photo
 from states.user_states import MyStates
-from keyboards.inline.yes_or_no_buttons import yes_or_no
-from keyboards.inline.confirm_buttons import confirm
-from keyboards.inline.enter_date_start import enter_date_start
-from keyboards.inline.amount_photo import amount_photo
-from keyboards.inline.enter_date_finish import enter_date_finish
+from keyboards.inline.keyboard import yes_or_no, confirm, enter_date_start, enter_date_finish, amount_photo
 from keyboards.inline.calendar import create_calendar
 from database.data_base import write_database
 from datetime import date, timedelta
@@ -76,7 +72,7 @@ def city(message: Message) -> None:
 @bot.callback_query_handler(state=MyStates.location_id, func=None)
 def worker_callback_2(callback: CallbackQuery) -> None:
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.reply_city, user_id=callback.message.chat.id)
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
 
     for i_call in callback.message.reply_markup.keyboard:
         for keyboard in i_call:
@@ -93,7 +89,7 @@ def worker_callback_2(callback: CallbackQuery) -> None:
 
 @bot.callback_query_handler(state=MyStates.reply_city, func=None)
 def worker_callback_3(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(chat_id=callback.from_user.id, state=MyStates.date_begin, user_id=callback.message.chat.id)
         bot.send_message(chat_id=callback.from_user.id, text='Переходим к дате', reply_markup=enter_date_start())
@@ -104,7 +100,7 @@ def worker_callback_3(callback: CallbackQuery) -> None:
 
 @bot.callback_query_handler(state=MyStates.date_begin, func=None)
 def worker_callback_4(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.date_begin_callback, user_id=callback.message.chat.id)
     calendar, step = create_calendar(callback_data=callback)
     bot.send_message(chat_id=callback.from_user.id, text='Введите {}'.format(step), reply_markup=calendar)
@@ -136,7 +132,7 @@ def worker_callback_5(callback: CallbackQuery) -> None:
 
 @bot.callback_query_handler(state=MyStates.confirm, func=None)
 def worker_callback_6(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
 
     with bot.retrieve_data(chat_id=callback.from_user.id, user_id=callback.message.chat.id) as data:
         min_date = data['date_begin']
@@ -179,14 +175,14 @@ def worker_callback_7(callback: CallbackQuery) -> None:
 
 @bot.callback_query_handler(state=MyStates.confirm_2, func=None)
 def worker_callback_8(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.price_range, user_id=callback.message.chat.id)
     bot.send_message(chat_id=callback.from_user.id, text='Теперь выберем диапозон цен', reply_markup=confirm())
 
 
 @bot.callback_query_handler(state=MyStates.price_range, func=None)
 def worker_callback_8(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.price_max, user_id=callback.message.chat.id)
     bot.send_message(chat_id=callback.from_user.id, text='Напишите минимальную цену ($) за сутки')
 
@@ -220,7 +216,7 @@ def get_amount_hostels(message: Message) -> None:
 
 @bot.callback_query_handler(state=MyStates.distance_confirm, func=None)
 def worker_callback_8(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.distance_min, user_id=callback.message.chat.id)
     bot.send_message(chat_id=callback.from_user.id, text='Напишите минимальное расстояние (км) от центра')
 
@@ -266,7 +262,7 @@ def get_amount_hostels(message: Message) -> None:
 
 @bot.callback_query_handler(state=MyStates.confirm_3, func=None)
 def worker_callback_8(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.amount_hostels, user_id=callback.message.chat.id)
 
     with bot.retrieve_data(chat_id=callback.from_user.id, user_id=callback.message.chat.id) as data:
@@ -292,7 +288,7 @@ def get_amount_hostels(message: Message) -> None:
 
 @bot.callback_query_handler(state=MyStates.is_photo, func=None)
 def worker_callback_9(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     if callback.data == 'Да':
         bot.set_state(chat_id=callback.from_user.id, state=MyStates.amount_photo, user_id=callback.message.chat.id)
         bot.send_message(chat_id=callback.from_user.id, text='Сколько фото загрузить?', reply_markup=amount_photo())
@@ -315,7 +311,7 @@ def worker_callback_9(callback: CallbackQuery) -> None:
 
 @bot.callback_query_handler(state=MyStates.amount_photo, func=None)
 def get_amount_photo(callback: CallbackQuery) -> None:
-    bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id)
+    bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
     with bot.retrieve_data(chat_id=callback.from_user.id, user_id=callback.message.chat.id) as data:
         data['amount_photo'] = int(callback.data)
 

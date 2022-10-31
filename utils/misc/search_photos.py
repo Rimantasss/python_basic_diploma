@@ -3,11 +3,16 @@ from config_data.config import RAPID_API_KEY
 import json
 from json import JSONDecodeError
 from loguru import logger
-from typing import Any
 
 
 @logger.catch
-def founding_photo(i_hostel: str, amount_photo: int) -> Any:
+def founding_photo(i_hostel: str, amount_photo: int) -> list:
+    """
+    Функция поиска фотографий, возвращает список из ссылок на фото
+    :param i_hostel: id отеля
+    :param amount_photo: количество фото
+    :return: list
+    """
     photo_hostel_req = requests.get(
         url='https://hotels4.p.rapidapi.com/properties/get-hotel-photos',
         params={'id': i_hostel},

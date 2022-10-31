@@ -3,12 +3,25 @@ import re
 from config_data.config import RAPID_API_KEY
 import json
 from loguru import logger
+from math import ceil
 
 
 @logger.catch
 def founding_hostels(id_location: str, amount_hostels: int, amount_days: int, command: str, price_min: str = None,
                      price_max: str = None, distance_min: float = None, distance_max: float = None) -> tuple:
-
+    """
+        Функция ищет отели по запросу в
+        соответствии с выбранной командой
+    :param id_location: id геолокации
+    :param amount_hostels: количество отелей
+    :param amount_days: количество дней пребывания
+    :param command: введенная команда для поиска
+    :param price_min: минимальная цена
+    :param price_max: максимальная цена
+    :param distance_min: минимальная дистанция
+    :param distance_max: максимальная дистанция
+    :return: кортеж из списка id геолокаций, списка информации об отелях и строке состоящей из названий отелей
+    """
     if command == 'lowprice':
         param_sort = 'PRICE'
     elif command == 'highprice':
@@ -52,6 +65,13 @@ def founding_hostels(id_location: str, amount_hostels: int, amount_days: int, co
 
 @logger.catch
 def sort_hotels(suggestions: dict, distance_min: float, distance_max: float) -> list:
+    """
+    Функция фильтрует словарь по дистанции и сортирует по цене
+    :param suggestions: словарь из значений
+    :param distance_min: минимальная дистанция
+    :param distance_max: максимальная дистанция
+    :return: list
+    """
     filter_hostel = list(filter(
         lambda x: distance_max > float(x['landmarks'][0]['distance'][:3].replace(',', '.')) > distance_min,
         suggestions['results']
@@ -61,7 +81,15 @@ def sort_hotels(suggestions: dict, distance_min: float, distance_max: float) -> 
 
 
 @logger.catch
-def all_info(data, amount_hostels, amount_days):
+def all_info(data: list, amount_hostels: int, amount_days: int) -> tuple:
+    """
+    Функция создает список id отелей, список из информации
+     об отелях и строку состоящую из названий отелей
+    :param data: список значений
+    :param amount_hostels: количество отелей
+    :param amount_days: количество дней
+    :return: tuple
+    """
     id_hostels_list, info_hostel_list, all_hostels_name = list(), list(), str()
     for i_hostel in data[:amount_hostels]:
         name = i_hostel.get('name', '-')
@@ -87,8 +115,9 @@ def all_info(data, amount_hostels, amount_days):
         else:
             price = '-'
         if price != '-':
+            cur_price = float(i_hostel['ratePlan']['price']['exactCurrent'])
             total_price = '${}'.format(
-                int(i_hostel['ratePlan']['price']['current'][1:]) * amount_days
+                ceil(cur_price * amount_days)
             )
         else:
             total_price = '-'
