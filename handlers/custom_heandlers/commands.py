@@ -4,7 +4,7 @@ from utils.misc.search_dest_id import city_founding
 from utils.misc.search_hostels import founding_hostels
 from utils.misc.search_photos import founding_photo
 from states.user_states import MyStates
-from keyboards.inline.keyboard import yes_or_no, confirm, enter_date_start, enter_date_finish, amount_photo
+from keyboards.inline.keyboard import yes_or_no, confirm, enter_date_start, enter_date_finish, amount_photo, link_button
 from keyboards.inline.calendar import create_calendar
 from database.data_base import write_database
 from datetime import date, timedelta
@@ -282,18 +282,19 @@ def is_photo(callback: CallbackQuery) -> None:
     else:
         with bot.retrieve_data(chat_id=callback.from_user.id, user_id=callback.message.chat.id) as data:
             if data['command'] == 'bestdeal':
-                id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
+                id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
                     data['location_id'], data['amount_hostels'], data['amount_days'], 'bestdeal',
                     data['price_min'], data['price_max'], data['distance_min'], data['distance_max']
                 )
             else:
-                id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
+                id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
                     data['location_id'], data['amount_hostels'], data['amount_days'], data['command']
                 )
             write_database(data['command'], data['date'], data['time'], all_hostels_name)
 
-        for i_id in info_hostel_list:
-            bot.send_message(chat_id=callback.from_user.id, text=i_id)
+        for i_id_hostel in enumerate(info_hostel_list):
+            num, i_id = i_id_hostel
+            bot.send_message(chat_id=callback.from_user.id, text=i_id, reply_markup=link_button(link[num]))
 
 
 @bot.callback_query_handler(state=MyStates.amount_photo, func=None)
@@ -303,12 +304,12 @@ def get_all_info(callback: CallbackQuery) -> None:
         data['amount_photo'] = int(callback.data)
 
     if data['command'] == 'bestdeal':
-        id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
+        id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
             data['location_id'], data['amount_hostels'], data['amount_days'], 'bestdeal',
             data['price_min'], data['price_max'], data['distance_min'], data['distance_max']
         )
     else:
-        id_hostels_list, info_hostel_list, all_hostels_name = founding_hostels(
+        id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
             data['location_id'], data['amount_hostels'], data['amount_days'], data['command']
         )
 
@@ -319,7 +320,7 @@ def get_all_info(callback: CallbackQuery) -> None:
             chat_id=callback.from_user.id,
             media=[InputMediaPhoto(i_pic) for i_pic in pics]
         )
-        bot.send_message(chat_id=callback.from_user.id, text=info_hostel_list[num])
+        bot.send_message(chat_id=callback.from_user.id, text=info_hostel_list[num], reply_markup=link_button(link[num]))
         bot.set_state(chat_id=callback.from_user.id, state=None, user_id=callback.message.chat.id)
 
     write_database(data['command'], data['date'], data['time'], all_hostels_name)

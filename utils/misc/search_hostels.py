@@ -90,7 +90,7 @@ def all_info(data: list, amount_hostels: int, amount_days: int) -> tuple:
     :param amount_days: количество дней
     :return: tuple
     """
-    id_hostels_list, info_hostel_list, all_hostels_name = list(), list(), str()
+    id_hostels_list, info_hostel_list, list_link, all_hostels_name = list(), list(), list(), str()
     for i_hostel in data[:amount_hostels]:
         name = i_hostel.get('name', '-')
         all_hostels_name += ''.join('{}\n'.format(name))
@@ -124,13 +124,15 @@ def all_info(data: list, amount_hostels: int, amount_days: int) -> tuple:
 
         id_hostels_list.append(i_hostel['id'])
         link = 'https://hotels.com/ho{}'.format(i_hostel['id'])
-        info_hostel = '\n🏨Отель: {}' \
-                      '\n⭐️Рейтинг: {}' \
-                      '\n🔑Адрес: {}' \
-                      '\n🔍Удаленность от центра: {}' \
-                      '\n💵Цена за сутки: {}' \
-                      '\n💰Общая стоимость: {}' \
-                      '\n💾Ссылка на отель: {}'.format(name, rating, adress, distance, price, total_price, link)
+        list_link.append(link)
+        info_hostel = '\n🏨Отель: {name}' \
+                      '\n⭐️Рейтинг: {rating}' \
+                      '\n🔑Адрес: {adress}' \
+                      '\n🔍Удаленность от центра: {distance}' \
+                      '\n💵Цена за сутки: {price}' \
+                      '\n💰Общая стоимость: {total_price}'.format(
+                        name=name, rating=rating, adress=adress, distance=distance, price=price, total_price=total_price
+                      )
         info_hostel_list.append(info_hostel)
 
-    return id_hostels_list, info_hostel_list, all_hostels_name
+    return id_hostels_list, info_hostel_list, all_hostels_name, list_link

@@ -46,3 +46,10 @@ def yes_or_no() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text='Нет', callback_data='Нет')
     )
     return markup
+
+
+def link_button(link: str) -> InlineKeyboardMarkup:
+    """Функция создает клавиатуру с кнопкой ссылкой на отель"""
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton(text='Ссылка на отель', url=link))
+    return markup
