@@ -9,8 +9,10 @@ from keyboards.inline.calendar import create_calendar
 from database.data_base import write_database
 from datetime import date, timedelta
 import time
+from loguru import logger
 
 
+@logger.catch
 @bot.message_handler(commands=['lowprice'])
 def lowprice(message: Message) -> None:
     bot.set_state(chat_id=message.from_user.id, state=MyStates.city, user_id=message.chat.id)
@@ -22,6 +24,7 @@ def lowprice(message: Message) -> None:
         data['command'] = message.text[1:]
 
 
+@logger.catch
 @bot.message_handler(commands=['highprice'])
 def highprice(message: Message) -> None:
     bot.set_state(chat_id=message.from_user.id, state=MyStates.city, user_id=message.chat.id)
@@ -33,6 +36,7 @@ def highprice(message: Message) -> None:
         data['command'] = message.text[1:]
 
 
+@logger.catch
 @bot.message_handler(commands=['bestdeal'])
 def bestdeal(message: Message) -> None:
     bot.set_state(chat_id=message.from_user.id, state=MyStates.city, user_id=message.chat.id)
@@ -44,6 +48,7 @@ def bestdeal(message: Message) -> None:
         data['command'] = message.text[1:]
 
 
+@logger.catch
 @bot.message_handler(state=MyStates.city)
 def city(message: Message) -> None:
     if message.text.isalpha():
@@ -69,6 +74,7 @@ def city(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id, text='Назвние города должно состоять только из букв!')
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.location_id, func=None)
 def select_location(callback: CallbackQuery) -> None:
     bot.set_state(chat_id=callback.from_user.id, state=MyStates.reply_city, user_id=callback.message.chat.id)
@@ -87,6 +93,7 @@ def select_location(callback: CallbackQuery) -> None:
         data['location_id'] = callback.data
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.reply_city, func=None)
 def select_date(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -98,6 +105,7 @@ def select_date(callback: CallbackQuery) -> None:
         bot.send_message(chat_id=callback.from_user.id, text='Выберем заново...В каком городе ищем?')
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.date_begin, func=None)
 def calendar_1(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -106,6 +114,7 @@ def calendar_1(callback: CallbackQuery) -> None:
     bot.send_message(chat_id=callback.from_user.id, text='Введите {}'.format(step), reply_markup=calendar)
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.date_begin_callback, func=None)
 def get_date_start(callback: CallbackQuery) -> None:
     result, key, step = create_calendar(callback_data=callback, is_process=True)
@@ -130,6 +139,7 @@ def get_date_start(callback: CallbackQuery) -> None:
         bot.set_state(chat_id=callback.from_user.id, state=MyStates.confirm, user_id=callback.message.chat.id)
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.confirm, func=None)
 def calendar_2(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -142,6 +152,7 @@ def calendar_2(callback: CallbackQuery) -> None:
     bot.send_message(chat_id=callback.from_user.id, text='Введите {}'.format(step), reply_markup=calendar)
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.date_finish, func=None)
 def get_date_finish(callback: CallbackQuery) -> None:
 
@@ -173,6 +184,7 @@ def get_date_finish(callback: CallbackQuery) -> None:
                 bot.set_state(chat_id=callback.from_user.id, state=MyStates.confirm_3, user_id=callback.message.chat.id)
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.confirm_2, func=None)
 def select_prices(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -180,6 +192,7 @@ def select_prices(callback: CallbackQuery) -> None:
     bot.send_message(chat_id=callback.from_user.id, text='Теперь выберем диапозон цен', reply_markup=confirm())
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.price_range, func=None)
 def enter_price(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -187,6 +200,7 @@ def enter_price(callback: CallbackQuery) -> None:
     bot.send_message(chat_id=callback.from_user.id, text='Напишите минимальную цену ($) за сутки')
 
 
+@logger.catch
 @bot.message_handler(state=MyStates.price_max)
 def get_price_min(message: Message) -> None:
     if message.text.isdecimal():
@@ -200,6 +214,7 @@ def get_price_min(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id, text='Введите цифрами!')
 
 
+@logger.catch
 @bot.message_handler(state=MyStates.distance)
 def get_price_max(message: Message) -> None:
     if message.text.isdecimal():
@@ -214,6 +229,7 @@ def get_price_max(message: Message) -> None:
             data['price_max'] = message.text
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.distance_confirm, func=None)
 def select_distance(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -221,6 +237,7 @@ def select_distance(callback: CallbackQuery) -> None:
     bot.send_message(chat_id=callback.from_user.id, text='Напишите минимальное расстояние (км) от центра')
 
 
+@logger.catch
 @bot.message_handler(state=MyStates.distance_min)
 def get_distance_min(message: Message) -> None:
     if message.text.isdecimal():
@@ -234,6 +251,7 @@ def get_distance_min(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id, text='Введите цифрами!')
 
 
+@logger.catch
 @bot.message_handler(state=MyStates.distance_max)
 def get_distance_max(message: Message) -> None:
     if message.text.isdecimal():
@@ -247,6 +265,7 @@ def get_distance_max(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id, text='Введите цифрами!')
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.confirm_3, func=None)
 def amount_hostels(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -257,6 +276,7 @@ def amount_hostels(callback: CallbackQuery) -> None:
             bot.send_message(chat_id=callback.from_user.id, text='Сколько отелей показать?')
 
 
+@logger.catch
 @bot.message_handler(state=MyStates.amount_hostels)
 def get_amount_hostels(message: Message) -> None:
     if message.text.isdecimal():
@@ -273,6 +293,7 @@ def get_amount_hostels(message: Message) -> None:
         bot.send_message(chat_id=message.from_user.id, text='Введите цифрами!')
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.is_photo, func=None)
 def is_photo(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -282,21 +303,26 @@ def is_photo(callback: CallbackQuery) -> None:
     else:
         with bot.retrieve_data(chat_id=callback.from_user.id, user_id=callback.message.chat.id) as data:
             if data['command'] == 'bestdeal':
-                id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
+                id_hostels_list, info_hostel_list, all_hostels_name, link, coordinate_list = founding_hostels(
                     data['location_id'], data['amount_hostels'], data['amount_days'], 'bestdeal',
                     data['price_min'], data['price_max'], data['distance_min'], data['distance_max']
                 )
             else:
-                id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
+                id_hostels_list, info_hostel_list, all_hostels_name, link, coordinate_list = founding_hostels(
                     data['location_id'], data['amount_hostels'], data['amount_days'], data['command']
                 )
             write_database(data['command'], data['date'], data['time'], all_hostels_name)
 
         for i_id_hostel in enumerate(info_hostel_list):
             num, i_id = i_id_hostel
-            bot.send_message(chat_id=callback.from_user.id, text=i_id, reply_markup=link_button(link[num]))
+            bot.send_message(
+                chat_id=callback.from_user.id,
+                text=i_id,
+                reply_markup=link_button(link[num], coordinate_list[num])
+            )
 
 
+@logger.catch
 @bot.callback_query_handler(state=MyStates.amount_photo, func=None)
 def get_all_info(callback: CallbackQuery) -> None:
     bot.edit_message_reply_markup(chat_id=callback.from_user.id, message_id=callback.message.message_id)
@@ -304,12 +330,12 @@ def get_all_info(callback: CallbackQuery) -> None:
         data['amount_photo'] = int(callback.data)
 
     if data['command'] == 'bestdeal':
-        id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
+        id_hostels_list, info_hostel_list, all_hostels_name, link, coordinate_list = founding_hostels(
             data['location_id'], data['amount_hostels'], data['amount_days'], 'bestdeal',
             data['price_min'], data['price_max'], data['distance_min'], data['distance_max']
         )
     else:
-        id_hostels_list, info_hostel_list, all_hostels_name, link = founding_hostels(
+        id_hostels_list, info_hostel_list, all_hostels_name, link, coordinate_list = founding_hostels(
             data['location_id'], data['amount_hostels'], data['amount_days'], data['command']
         )
 
@@ -320,7 +346,11 @@ def get_all_info(callback: CallbackQuery) -> None:
             chat_id=callback.from_user.id,
             media=[InputMediaPhoto(i_pic) for i_pic in pics]
         )
-        bot.send_message(chat_id=callback.from_user.id, text=info_hostel_list[num], reply_markup=link_button(link[num]))
+        bot.send_message(
+            chat_id=callback.from_user.id,
+            text=info_hostel_list[num],
+            reply_markup=link_button(link[num], coordinate_list[num])
+        )
         bot.set_state(chat_id=callback.from_user.id, state=None, user_id=callback.message.chat.id)
 
     write_database(data['command'], data['date'], data['time'], all_hostels_name)

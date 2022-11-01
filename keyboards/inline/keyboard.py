@@ -1,6 +1,8 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from loguru import logger
 
 
+@logger.catch
 def amount_photo() -> InlineKeyboardMarkup:
     """Функция создает клавиатуру из кнопок с цифрами от 1 до 9"""
     markup = InlineKeyboardMarkup(row_width=3)
@@ -17,6 +19,7 @@ def amount_photo() -> InlineKeyboardMarkup:
     return markup
 
 
+@logger.catch
 def confirm() -> InlineKeyboardMarkup:
     """Функция создает клавиатуру с кнопкой подтвердить действие"""
     markup = InlineKeyboardMarkup()
@@ -24,6 +27,7 @@ def confirm() -> InlineKeyboardMarkup:
     return markup
 
 
+@logger.catch
 def enter_date_start() -> InlineKeyboardMarkup:
     """Функция создает клавиатуру с кнопкой ввести дату заезда"""
     markup = InlineKeyboardMarkup()
@@ -31,6 +35,7 @@ def enter_date_start() -> InlineKeyboardMarkup:
     return markup
 
 
+@logger.catch
 def enter_date_finish() -> InlineKeyboardMarkup:
     """Функция создает клавиатуру с кнопкой ввести дату отъезда"""
     markup = InlineKeyboardMarkup()
@@ -38,6 +43,7 @@ def enter_date_finish() -> InlineKeyboardMarkup:
     return markup
 
 
+@logger.catch
 def yes_or_no() -> InlineKeyboardMarkup:
     """Функция создает клавиатуру с кнопками да/нет"""
     markup = InlineKeyboardMarkup()
@@ -48,8 +54,15 @@ def yes_or_no() -> InlineKeyboardMarkup:
     return markup
 
 
-def link_button(link: str) -> InlineKeyboardMarkup:
-    """Функция создает клавиатуру с кнопкой ссылкой на отель"""
-    markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton(text='Ссылка на отель', url=link))
+@logger.catch
+def link_button(link: str, geo: dict) -> InlineKeyboardMarkup:
+    """Функция создает клавиатуру с кнопками: ссылка на отель, ссылка на местоположение отеля"""
+    geo_link = 'https://www.google.com/maps/search/карты/@{lat},{lon},19z'.format(
+        lat=geo['lat'], lon=geo['lon']
+    )
+    markup = InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        InlineKeyboardButton(text='Ссылка на отель', url=link),
+        InlineKeyboardButton(text='Показать на карте', url=geo_link)
+    )
     return markup

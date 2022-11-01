@@ -20,7 +20,8 @@ def founding_hostels(id_location: str, amount_hostels: int, amount_days: int, co
     :param price_max: максимальная цена
     :param distance_min: минимальная дистанция
     :param distance_max: максимальная дистанция
-    :return: кортеж из списка id геолокаций, списка информации об отелях и строке состоящей из названий отелей
+    :return: кортеж из списка id геолокаций, списка информации об отелях, строке состоящей из названий отелей,
+    списка из ссылок на отели
     """
     if command == 'lowprice':
         param_sort = 'PRICE'
@@ -83,17 +84,20 @@ def sort_hotels(suggestions: dict, distance_min: float, distance_max: float) -> 
 @logger.catch
 def all_info(data: list, amount_hostels: int, amount_days: int) -> tuple:
     """
-    Функция создает список id отелей, список из информации
-     об отелях и строку состоящую из названий отелей
+    Функция создает: список id отелей, список из информации
+     об отелях и строку состоящую из названий отелей, список
+     ссылок на отели
     :param data: список значений
     :param amount_hostels: количество отелей
     :param amount_days: количество дней
     :return: tuple
     """
-    id_hostels_list, info_hostel_list, list_link, all_hostels_name = list(), list(), list(), str()
+    id_hostels_list, info_hostel_list, list_link, coord_list, all_hostels_name = list(), list(), list(), list(), str()
     for i_hostel in data[:amount_hostels]:
         name = i_hostel.get('name', '-')
         all_hostels_name += ''.join('{}\n'.format(name))
+        coordinate = i_hostel.get('coordinate')
+        coord_list.append(coordinate)
 
         if 'guestReviews' in i_hostel:
             rating = i_hostel['guestReviews'].get('rating', '-')
@@ -135,4 +139,4 @@ def all_info(data: list, amount_hostels: int, amount_days: int) -> tuple:
                       )
         info_hostel_list.append(info_hostel)
 
-    return id_hostels_list, info_hostel_list, all_hostels_name, list_link
+    return id_hostels_list, info_hostel_list, all_hostels_name, list_link, coord_list
